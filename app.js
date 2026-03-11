@@ -2,6 +2,11 @@ const statusEl = document.getElementById('status');
 const userEl = document.getElementById('user');
 const tokenEl = document.getElementById('token');
 
+window.testClick = function () {
+  alert('Le bouton est bien cliquable');
+  statusEl.textContent = 'Button click detected';
+};
+
 function showError(message, error) {
   statusEl.textContent = message;
   userEl.textContent = error ? String(error) : 'No details';
@@ -34,7 +39,7 @@ if (typeof Keycloak === 'undefined') {
         preferred_username: parsed.preferred_username,
         email: parsed.email,
         name: parsed.name,
-        realm: parsed.iss
+        issuer: parsed.iss
       },
       null,
       2
@@ -44,12 +49,12 @@ if (typeof Keycloak === 'undefined') {
   }
 
   window.doLogin = function () {
-    console.log('Login button clicked');
+    alert('Login clicked');
     keycloak.login();
   };
 
   window.doLogout = function () {
-    console.log('Logout button clicked');
+    alert('Logout clicked');
     keycloak.logout({
       redirectUri: window.location.origin
     });
