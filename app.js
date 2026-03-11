@@ -39,7 +39,6 @@ window.doLogout = function () {
 };
 
 keycloak.init({
-  onLoad: 'check-sso',
   pkceMethod: 'S256'
 }).then(function (authenticated) {
   render(authenticated);
