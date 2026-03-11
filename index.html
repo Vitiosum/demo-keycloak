@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Clever Cloud Keycloak Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #0f172a;
+      color: white;
+    }
+    .container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 24px;
+    }
+    .card {
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin-top: 0;
+      color: #22c55e;
+    }
+    button {
+      background: #22c55e;
+      color: #0f172a;
+      border: 0;
+      border-radius: 8px;
+      padding: 12px 18px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button.secondary {
+      background: #38bdf8;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #0b1220;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    .muted {
+      color: #cbd5e1;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>🚀 Clever Cloud Keycloak Demo</h1>
+      <p class="muted">Simple static demo using Keycloak on Clever Cloud.</p>
+      <button onclick="doLogin()">Login</button>
+      <button class="secondary" onclick="doLogout()">Logout</button>
+    </div>
+
+    <div class="card">
+      <h2>Status</h2>
+      <div id="status">Loading…</div>
+    </div>
+
+    <div class="card">
+      <h2>User</h2>
+      <pre id="user">Not authenticated</pre>
+    </div>
+
+    <div class="card">
+      <h2>Token</h2>
+      <pre id="token">No token</pre>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/keycloak-js@26.2.0/dist/keycloak.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
