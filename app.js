@@ -38,7 +38,7 @@ if (typeof Keycloak === 'undefined') {
   show('Keycloak JS library not loaded', 'window.Keycloak is undefined');
 } else {
   keycloak = new Keycloak({
-    url: 'https://beouc00rjlj2abh7xbhp-keycloak.services.clever-cloud.com',
+    url: 'https://hgft1uiekbtarpkdjsng-keycloak.services.clever-cloud.com',
     realm: 'demo',
     clientId: 'demo-client'
   });
