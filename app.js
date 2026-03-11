@@ -1,8 +1,4 @@
-const keycloak = new Keycloak({
-  url: 'https://pgck8uiz7fmuukimpoxj-keycloak.services.clever-cloud.com',
-  realm: 'demo',
-  clientId: 'demo-client'
-});
+const keycloak = new Keycloak(window.KEYCLOAK_CONFIG);
 
 const statusEl = document.getElementById('status');
 const userEl = document.getElementById('user');
@@ -17,13 +13,18 @@ function render(authenticated) {
   }
 
   const parsed = keycloak.tokenParsed || {};
+
   statusEl.textContent = 'Authenticated';
-  userEl.textContent = JSON.stringify({
-    preferred_username: parsed.preferred_username,
-    email: parsed.email,
-    name: parsed.name,
-    realm: parsed.iss
-  }, null, 2);
+  userEl.textContent = JSON.stringify(
+    {
+      preferred_username: parsed.preferred_username,
+      email: parsed.email,
+      name: parsed.name,
+      issuer: parsed.iss
+    },
+    null,
+    2
+  );
 
   tokenEl.textContent = keycloak.token || 'No token';
 }
@@ -38,11 +39,31 @@ window.doLogout = function () {
   });
 };
 
-keycloak.init({
-  pkceMethod: 'S256'
-}).then(function (authenticated) {
-  render(authenticated);
-}).catch(function (err) {
-  statusEl.textContent = 'Keycloak init error';
-  userEl.textContent = String(err);
-});
+window.refreshToken = function () {
+  keycloak
+    .updateToken(30)
+    .then(function (refreshed) {
+      if (refreshed) {
+        console.log('Token refreshed');
+      } else {
+        console.log('Token still valid');
+      }
+      render(keycloak.authenticated);
+    })
+    .catch(function () {
+      console.error('Failed to refresh token');
+    });
+};
+
+keycloak
+  .init({
+    onLoad: 'check-sso',
+    pkceMethod: 'S256'
+  })
+  .then(function (authenticated) {
+    render(authenticated);
+  })
+  .catch(function (err) {
+    statusEl.textContent = 'Keycloak init error';
+    userEl.textContent = String(err);
+  });
