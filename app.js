@@ -1,69 +1,69 @@
-const keycloak = new Keycloak(window.KEYCLOAK_CONFIG);
-
 const statusEl = document.getElementById('status');
 const userEl = document.getElementById('user');
 const tokenEl = document.getElementById('token');
 
-function render(authenticated) {
-  if (!authenticated) {
-    statusEl.textContent = 'Not authenticated';
-    userEl.textContent = 'No user authenticated';
-    tokenEl.textContent = 'No token';
-    return;
-  }
-
-  const parsed = keycloak.tokenParsed || {};
-
-  statusEl.textContent = 'Authenticated';
-  userEl.textContent = JSON.stringify(
-    {
-      preferred_username: parsed.preferred_username,
-      email: parsed.email,
-      name: parsed.name,
-      issuer: parsed.iss
-    },
-    null,
-    2
-  );
-
-  tokenEl.textContent = keycloak.token || 'No token';
+function showError(message, error) {
+  statusEl.textContent = message;
+  userEl.textContent = error ? String(error) : 'No details';
+  tokenEl.textContent = 'No token';
+  console.error(message, error);
 }
 
-window.doLogin = function () {
-  keycloak.login();
-};
-
-window.doLogout = function () {
-  keycloak.logout({
-    redirectUri: window.location.origin
+if (typeof Keycloak === 'undefined') {
+  showError('Keycloak JS library not loaded', 'window.Keycloak is undefined');
+} else {
+  const keycloak = new Keycloak({
+    url: 'https://pgck8uiz7fmuukimpoxj-keycloak.services.clever-cloud.com',
+    realm: 'demo',
+    clientId: 'demo-client'
   });
-};
 
-window.refreshToken = function () {
-  keycloak
-    .updateToken(30)
-    .then(function (refreshed) {
-      if (refreshed) {
-        console.log('Token refreshed');
-      } else {
-        console.log('Token still valid');
-      }
-      render(keycloak.authenticated);
-    })
-    .catch(function () {
-      console.error('Failed to refresh token');
+  function render(authenticated) {
+    if (!authenticated) {
+      statusEl.textContent = 'Not authenticated';
+      userEl.textContent = 'No user authenticated';
+      tokenEl.textContent = 'No token';
+      return;
+    }
+
+    const parsed = keycloak.tokenParsed || {};
+
+    statusEl.textContent = 'Authenticated';
+    userEl.textContent = JSON.stringify(
+      {
+        preferred_username: parsed.preferred_username,
+        email: parsed.email,
+        name: parsed.name,
+        realm: parsed.iss
+      },
+      null,
+      2
+    );
+
+    tokenEl.textContent = keycloak.token || 'No token';
+  }
+
+  window.doLogin = function () {
+    console.log('Login button clicked');
+    keycloak.login();
+  };
+
+  window.doLogout = function () {
+    console.log('Logout button clicked');
+    keycloak.logout({
+      redirectUri: window.location.origin
     });
-};
+  };
 
-keycloak
-  .init({
-    onLoad: 'check-sso',
-    pkceMethod: 'S256'
-  })
-  .then(function (authenticated) {
-    render(authenticated);
-  })
-  .catch(function (err) {
-    statusEl.textContent = 'Keycloak init error';
-    userEl.textContent = String(err);
-  });
+  keycloak
+    .init({
+      onLoad: 'check-sso',
+      pkceMethod: 'S256'
+    })
+    .then(function (authenticated) {
+      render(authenticated);
+    })
+    .catch(function (err) {
+      showError('Keycloak init error', err);
+    });
+}
