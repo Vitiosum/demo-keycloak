@@ -1,263 +1,268 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Keycloak Demo — Clever Cloud</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      min-height: 100vh;
-      background: linear-gradient(135deg, #0a0f1e 0%, #0d1530 50%, #0a0f1e 100%);
-      color: #e2e8f0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      padding: 32px 16px 64px;
-    }
-    .container { max-width: 640px; margin: 0 auto; }
-
-    .header { text-align: center; margin-bottom: 32px; }
-    .header-badge {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2);
-      border-radius: 99px; color: #86efac; font-size: 13px; font-weight: 500;
-      padding: 6px 16px; margin-bottom: 16px;
-    }
-    .dot { width: 7px; height: 7px; background: #22c55e; border-radius: 50%; animation: pulse-dot 2s ease infinite; }
-    @keyframes pulse-dot { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-    .header h1 { font-size: 34px; font-weight: 700; color: white; margin-bottom: 8px; }
-    .header h1 span { color: #22c55e; }
-    .header p { color: #64748b; font-size: 14px; }
-
-    .card {
-      background: rgba(15,23,42,0.85); backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.07); border-radius: 16px;
-      padding: 22px; margin-bottom: 14px;
-    }
-    .card-title { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; margin-bottom: 14px; }
-
-    .auth-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    .btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      border: none; border-radius: 10px; cursor: pointer;
-      font-size: 14px; font-weight: 600; padding: 11px 20px; transition: all 0.2s;
-    }
-    .btn-login { background: #22c55e; color: #052e16; }
-    .btn-login:hover { background: #16a34a; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(34,197,94,0.3); }
-    .btn-logout { background: rgba(56,189,248,0.12); color: #7dd3fc; border: 1px solid rgba(56,189,248,0.2); }
-    .btn-logout:hover { background: rgba(56,189,248,0.2); transform: translateY(-1px); }
-
-    .status-row { display: flex; align-items: center; gap: 10px; }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; transition: background 0.3s; }
-    .status-dot.loading { background: #f59e0b; animation: pulse-dot 1s ease infinite; }
-    .status-dot.ok { background: #22c55e; }
-    .status-dot.idle { background: #475569; }
-    .status-dot.error { background: #ef4444; }
-    .status-text { font-size: 15px; }
-
-    .user-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .uf { background: rgba(2,6,23,0.6); border: 1px solid rgba(255,255,255,0.05); border-radius: 10px; padding: 12px; }
-    .uf-label { font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #475569; margin-bottom: 4px; }
-    .uf-value { font-size: 14px; color: #e2e8f0; word-break: break-all; }
-    .uf-empty { color: #334155; font-style: italic; font-size: 13px; }
-
-    .token-wrap { position: relative; }
-    pre {
-      background: rgba(2,6,23,0.8); border: 1px solid rgba(255,255,255,0.05);
-      border-radius: 10px; color: #7dd3fc; font-size: 12px; line-height: 1.6;
-      overflow-x: auto; padding: 14px; white-space: pre-wrap; word-break: break-all;
-    }
-    pre.muted { color: #475569; font-style: italic; }
-    .copy-btn {
-      position: absolute; top: 8px; right: 8px; background: rgba(255,255,255,0.07);
-      border: none; border-radius: 6px; color: #64748b; cursor: pointer;
-      font-size: 11px; padding: 4px 10px; transition: all 0.2s;
-    }
-    .copy-btn:hover { background: rgba(255,255,255,0.14); color: #e2e8f0; }
-
-    @media (max-width: 480px) {
-      .user-grid { grid-template-columns: 1fr; }
-      .auth-actions { flex-direction: column; }
-    }
-    .cert-banner {
-      display: flex; align-items: center; gap: 16px;
-      background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.25);
-      border-radius: 16px; padding: 20px 24px; margin-bottom: 14px;
-    }
-    .cert-icon { font-size: 28px; flex-shrink: 0; }
-    .cert-content { flex: 1; }
-    .cert-title { font-size: 15px; font-weight: 600; color: #fbbf24; margin-bottom: 4px; }
-    .cert-sub { font-size: 13px; color: #78716c; line-height: 1.5; }
-    .cert-btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: #fbbf24; border-radius: 10px; color: #1c1917;
-      font-size: 13px; font-weight: 700; padding: 10px 18px;
-      text-decoration: none; transition: all 0.2s; white-space: nowrap; flex-shrink: 0;
-    }
-    .cert-btn:hover { background: #f59e0b; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(251,191,36,0.3); }
-    @media (max-width: 540px) { .cert-banner { flex-direction: column; text-align: center; } }
-    .footer { margin-top: 32px; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 22px; }
-    .footer-links { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px; }
-    .footer-link {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 8px; color: #64748b; font-size: 12px; padding: 6px 12px;
-      text-decoration: none; transition: all 0.2s;
-    }
-    .footer-link:hover { background: rgba(255,255,255,0.08); color: #94a3b8; }
-    .footer-link.cc { color: #86efac; border-color: rgba(34,197,94,0.2); background: rgba(34,197,94,0.06); }
-    .footer-link.cc:hover { background: rgba(34,197,94,0.12); }
-    .footer-link.li { color: #93c5fd; border-color: rgba(96,165,250,0.2); background: rgba(96,165,250,0.06); }
-    .footer-link.li:hover { background: rgba(96,165,250,0.12); }
-    .footer-link.cert { color: #fbbf24; border-color: rgba(251,191,36,0.25); background: rgba(251,191,36,0.07); }
-    .footer-link.cert:hover { background: rgba(251,191,36,0.14); }
-    .footer-copy { text-align: center; color: #334155; font-size: 11px; }
-  </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#13172e">
+  <title>Poste-frontière Keycloak — Clever Cloud</title>
+  <meta name="description" content="Connexion OpenID Connect avec PKCE sur l'add-on Keycloak de Clever Cloud : le jeton reçu est imprimé en passeport.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 101 116'%3E%3Cpolygon fill='%23AB2B4A' points='100.423 29.134 100.423 86.868 89.721 73.062 83.76 58.003 83.756 58.003 89.418 42.731'/%3E%3Cpolygon fill='%23E87A68' points='.429 29.134 .429 86.868 9.889 73.481 17.092 58.003 17.096 58.003 9.773 43.319'/%3E%3Cpolygon fill='%23D74D4E' points='83.756 58.003 52.241 60.003 17.092 58.003 31.76 29.134 50.426 .269 70.722 31.961'/%3E%3Cpolygon fill='%23BD3246' points='100.423 29.134 83.756 58.003 50.426 .269'/%3E%3Cpolygon fill='%23F19175' points='50.426 .269 17.092 58.003 .425 29.134'/%3E%3Cpolygon fill='%23CF3942' points='83.756 58.003 72.365 82.931 50.426 115.737 27.849 81.83 17.092 58.003'/%3E%3Cpolygon fill='%23E0625B' points='50.426 115.737 .425 86.868 17.092 58.003'/%3E%3Cpolygon fill='%239A244F' points='50.422 115.737 100.423 86.868 83.756 58.003'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="cc-brand.css">
+  <link rel="stylesheet" href="poste.css">
+  <script src="config.js"></script>
+  <script type="module" src="app.js"></script>
 </head>
 <body>
-  <div class="container">
+  <!-- Shared SVG pieces: the ink texture of the stamps and the plane of the entry stamp -->
+  <svg class="defs" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="ink" x="-8%" y="-8%" width="116%" height="116%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.3" xChannelSelector="R" yChannelSelector="G" result="rough"/>
+        <feColorMatrix in="noise" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.7 1.6" result="speckle"/>
+        <feComposite in="rough" in2="speckle" operator="in"/>
+      </filter>
+      <symbol id="plane" viewBox="0 0 24 24"><path d="M12 1.5l1.6 7.4 8.4 4.3v1.7l-8.3-2.3-.6 6.1 2.8 2v1.3L12 21l-3.9 1v-1.3l2.8-2-.6-6.1L2 14.9v-1.7l8.4-4.3z"/></symbol>
+    </defs>
+  </svg>
 
-    <div class="header">
-      <div class="header-badge">
-        <span class="dot"></span>
-        Clever Cloud · Keycloak Demo
+  <header class="cc-topbar">
+    <div class="cc-container cc-topbar__inner">
+      <a href="https://www.clever.cloud" target="_blank" rel="noopener noreferrer" aria-label="Clever Cloud">
+<svg class="cc-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 116" role="img" aria-label="Clever Cloud">
+  <g fill="none">
+        <g fill="currentColor" transform="translate(129 35)">
+      <path d="M15.241,18.87 C10.52,18.87 7.335,22.47 7.335,27.013 C7.335,31.556 10.58,35.215 15.183,35.215 C18.074,35.215 20.375,34.212 22.145,32.442 L25.804,37.753 C23.562,40.232 19.49,42.002 15.005,42.002 C6.627,42.002 0.136,35.275 0.136,27.073 C0.136,18.812 6.627,12.086 14.888,12.086 C19.726,12.086 23.562,13.738 26.039,16.335 L21.909,21.468 C20.139,19.755 18.015,18.87 15.241,18.87 Z"/>
+      <polygon points="31.229 .578 38.428 .578 38.428 41.174 31.229 41.174"/>
+      <path d="M44.976,27.072 C44.976,18.811 51.112,12.085 59.255,12.085 C67.339,12.085 73.475,18.339 73.475,26.482 C73.475,27.367 73.416,28.37 73.298,28.842 L52.351,28.842 C53.059,32.795 56.069,35.628 60.435,35.628 C63.267,35.628 65.687,34.389 67.339,32.678 L71.056,37.575 C68.932,40.053 64.919,42 60.14,42 C51.348,42 44.976,35.274 44.976,27.072 Z M52.469,24.299 L66.1,24.299 C65.274,20.286 62.737,18.221 59.373,18.221 C55.773,18.221 53.295,20.699 52.469,24.299 Z"/>
+      <polygon points="104.864 12.911 94.656 41.175 85.333 41.175 75.065 12.911 82.972 12.911 90.17 34.743 97.487 12.911"/>
+      <path d="M106.867 27.072C106.867 18.811 113.003 12.085 121.146 12.085 129.23 12.085 135.366 18.339 135.366 26.482 135.366 27.367 135.307 28.37 135.189 28.842L114.242 28.842C114.95 32.795 117.96 35.628 122.326 35.628 125.158 35.628 127.578 34.389 129.23 32.678L132.947 37.575C130.823 40.053 126.81 42 122.031 42 113.239 42 106.867 35.274 106.867 27.072zM114.36 24.299L127.991 24.299C127.165 20.286 124.628 18.221 121.264 18.221 117.665 18.221 115.187 20.699 114.36 24.299zM148.758 41.174L141.56 41.174 141.56 12.91 148.758 12.91 148.758 15.978C150.351 13.618 152.711 12.083 155.661 12.083 157.55 12.083 159.084 12.614 160.205 13.499L157.195 20.344C156.252 19.577 154.836 19.105 153.478 19.105 150.586 19.105 148.757 21.524 148.757 25.36L148.757 41.174 148.758 41.174zM191.415 18.87C186.694 18.87 183.508 22.47 183.508 27.013 183.508 31.556 186.753 35.215 191.356 35.215 194.248 35.215 196.548 34.212 198.319 32.442L201.977 37.753C199.735 40.232 195.664 42.002 191.179 42.002 182.8 42.002 176.31 35.275 176.31 27.073 176.31 18.812 182.8 12.086 191.061 12.086 195.9 12.086 199.735 13.738 202.213 16.335L198.082 21.468C196.312 19.755 194.188 18.87 191.415 18.87z"/>
+      <polygon points="207.402 .578 214.6 .578 214.6 41.174 207.402 41.174"/>
+      <path d="M221.148 27.072C221.148 18.811 227.639 12.085 235.84 12.085 244.042 12.085 250.592 18.812 250.592 27.072 250.592 35.274 244.042 42.001 235.84 42.001 227.64 42 221.148 35.274 221.148 27.072zM243.335 27.013C243.335 22.47 240.207 18.87 235.9 18.87 231.533 18.87 228.347 22.47 228.347 27.013 228.347 31.556 231.533 35.215 235.9 35.215 240.207 35.215 243.335 31.556 243.335 27.013zM263.924 28.193C263.924 32.323 266.343 35.097 269.943 35.097 273.542 35.097 275.962 32.324 275.962 28.193L275.962 12.911 283.16 12.911 283.16 28.724C283.16 36.631 277.909 41.882 269.943 41.882 261.977 41.882 256.725 36.631 256.725 28.724L256.725 12.911 263.924 12.911 263.924 28.193zM318.795.578L318.795 41.174 311.537 41.174 311.537 38.106C309.472 40.525 306.58 42.001 302.922 42.001 295.429 42.001 289.351 35.864 289.351 27.072 289.351 18.516 295.075 12.085 302.922 12.085 306.64 12.085 309.53 13.442 311.537 15.743L311.537.578 318.795.578zM311.537 27.013C311.537 22.47 308.409 18.87 304.102 18.87 299.735 18.87 296.549 22.47 296.549 27.013 296.549 31.556 299.735 35.215 304.102 35.215 308.409 35.215 311.537 31.556 311.537 27.013z"/>
+    </g>
+    <polygon fill="#AB2B4A" points="100.423 29.134 100.423 86.868 89.721 73.062 83.76 58.003 83.756 58.003 89.418 42.731"/><polygon fill="#E87A68" points=".429 29.134 .429 86.868 9.889 73.481 17.092 58.003 17.096 58.003 9.773 43.319"/><polygon fill="#D74D4E" points="83.756 58.003 52.241 60.003 17.092 58.003 31.76 29.134 50.426 .269 70.722 31.961"/><polygon fill="#BD3246" points="100.423 29.134 83.756 58.003 50.426 .269"/><polygon fill="#F19175" points="50.426 .269 17.092 58.003 .425 29.134"/><polygon fill="#CF3942" points="83.756 58.003 72.365 82.931 50.426 115.737 27.849 81.83 17.092 58.003"/><polygon fill="#E0625B" points="50.426 115.737 .425 86.868 17.092 58.003"/><polygon fill="#9A244F" points="50.422 115.737 100.423 86.868 83.756 58.003"/>
+  </g>
+</svg>
+      </a>
+      <span class="cc-topbar__sep"></span>
+      <div class="cc-topbar__demo"><small>Démo</small>Keycloak</div>
+      <span class="cc-topbar__spacer"></span>
+      <nav class="cc-topbar__nav" aria-label="Statut">
+        <span class="cc-pill cc-pill--mono cc-hide-sm">keycloak-js 26, OIDC + PKCE S256</span>
+        <span class="cc-pill cc-pill--muted" id="live-pill"><span class="cc-dot cc-dot--muted"></span><span id="live-text">Local</span></span>
+        <a class="cc-pill cc-pill--gradient" href="https://academy.clever.cloud/" target="_blank" rel="noopener noreferrer">Se certifier ↗</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="cc-container">
+    <section class="border">
+      <div class="booth" id="booth" data-state="init">
+        <h1 class="booth__title">Poste‑frontière</h1>
+        <p class="booth__lead">Keycloak, l'add-on de Clever Cloud, contrôle les identités du royaume <em id="lead-realm">demo</em> (un <i>realm</i>, en anglais). Passez le contrôle : la page reçoit un jeton OpenID Connect et l'imprime en passeport, visas compris.</p>
+
+        <div class="sign" role="status" aria-live="polite">
+          <svg class="sign__picto" viewBox="0 0 48 48" aria-hidden="true">
+            <circle cx="15" cy="11" r="5" fill="currentColor"/>
+            <path d="M7 44V25c0-4 3.4-7 8-7s8 3 8 7v19z" fill="currentColor"/>
+            <rect x="21" y="26" width="23" height="4" rx="1" fill="currentColor"/>
+            <rect x="29" y="9" width="12" height="15" rx="1.5" fill="none" stroke="currentColor" stroke-width="2.4"/>
+            <circle cx="35" cy="15" r="2.6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M31.5 20.5h7" stroke="currentColor" stroke-width="1.8"/>
+          </svg>
+          <div class="sign__body">
+            <p class="sign__title" id="sign-title">Contrôle en cours</p>
+            <p class="sign__text" id="sign-text">check-sso : le royaume vérifie, sans formulaire, si ce navigateur a déjà une session.</p>
+          </div>
+          <span class="sign__lamp" aria-hidden="true"></span>
+        </div>
+
+        <svg class="barrier" viewBox="0 0 360 92" aria-hidden="true">
+          <defs>
+            <pattern id="stripes" width="32" height="10" patternUnits="userSpaceOnUse">
+              <rect width="16" height="10" fill="#e8394f"/><rect x="16" width="16" height="10" fill="#f4f1f6"/>
+            </pattern>
+            <linearGradient id="lane" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#1a1e3d"/><stop offset="1" stop-color="#232853"/>
+            </linearGradient>
+          </defs>
+          <rect class="barrier__sky" width="360" height="92" fill="url(#lane)"/>
+          <path class="barrier__road" d="M0 84.5h360"/>
+          <path class="barrier__mark" d="M96 88h28M156 88h28M216 88h28M276 88h28"/>
+          <rect class="barrier__rest" x="318" y="62" width="6" height="22" rx="1"/>
+          <rect class="barrier__post" x="40" y="50" width="18" height="34" rx="2"/>
+          <g class="barrier__arm">
+            <rect x="49" y="55" width="272" height="9" rx="4.5" fill="url(#stripes)"/>
+            <rect x="24" y="55" width="26" height="9" rx="2" class="barrier__weight"/>
+            <circle cx="49" cy="59.5" r="5" class="barrier__pivot"/>
+          </g>
+        </svg>
+
+        <div class="booth__actions">
+          <button type="button" class="cc-btn cc-btn--gradient" id="btn-login">Passer le contrôle</button>
+          <button type="button" class="cc-btn" id="btn-refresh" hidden>Renouveler le jeton</button>
+          <button type="button" class="cc-btn cc-btn--danger" id="btn-logout" hidden>Sortir</button>
+        </div>
+        <p class="booth__hint" id="booth-hint">Connexion sur la page du royaume (code d'autorisation + PKCE S256), puis retour ici.</p>
+
+        <div class="desks">
+          <h2 class="desks__title">Les guichets du royaume</h2>
+          <dl>
+            <div><dt>Royaume</dt><dd id="ep-realm">—</dd></div>
+            <div><dt>Connexion</dt><dd>/protocol/openid-connect/auth</dd></div>
+            <div><dt>Jeton</dt><dd>/protocol/openid-connect/token</dd></div>
+            <div><dt>Sortie</dt><dd>/protocol/openid-connect/logout</dd></div>
+          </dl>
+        </div>
       </div>
-      <h1>Auth with <span>Keycloak</span></h1>
-      <p>Single sign-on demo deployed on Clever Cloud</p>
-    </div>
 
-    <div class="card">
-      <div class="card-title">Authentication</div>
-      <div class="auth-actions">
-        <button type="button" class="btn btn-login" onclick="doLogin()">
-          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
-          Login
-        </button>
-        <button type="button" class="btn btn-logout" onclick="doLogout()">
-          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-          Logout
-        </button>
+      <div class="desk">
+        <p class="specimen-ribbon" id="specimen-ribbon">Spécimen : exemple fictif, aucun jeton reçu</p>
+        <article class="passport" id="passport" data-mode="specimen" aria-label="Passeport imprimé depuis le jeton d'accès">
+          <section class="page page--id" aria-label="Page d'identité">
+            <svg class="guilloche" aria-hidden="true"></svg>
+            <header class="page__head">
+              <p class="page__title">Passeport <span>Passport</span></p>
+              <p class="page__realm">Royaume de <span data-f="realm">demo</span></p>
+            </header>
+            <div class="idgrid">
+              <svg class="photo" id="photo" viewBox="0 0 90 116" role="img" aria-label="Portrait"></svg>
+              <dl class="fields">
+                <div class="f f--half"><dt>Type</dt><dd>P</dd></div>
+                <div class="f f--half"><dt>Code <code>iss</code></dt><dd data-f="code">DEM</dd></div>
+                <div class="f"><dt>Nom <i>Surname</i> <code>family_name</code></dt><dd class="up" data-f="surname">—</dd></div>
+                <div class="f"><dt>Prénoms <i>Given names</i> <code>given_name</code></dt><dd class="up" data-f="givenNames">—</dd></div>
+                <div class="f"><dt>Identifiant <i>Username</i> <code>preferred_username</code></dt><dd data-f="username">—</dd></div>
+              </dl>
+            </div>
+            <dl class="fields">
+              <div class="f"><dt>N° de passeport <i>Passport No.</i> <code>sub</code></dt><dd class="mono" data-f="sub">—</dd></div>
+              <div class="f"><dt>Autorité <i>Authority</i> <code>iss</code></dt><dd class="mono" data-f="iss">—</dd></div>
+              <div class="f f--half"><dt>Délivré le <i>Issued</i> <code>iat</code></dt><dd data-f="issued">—</dd></div>
+              <div class="f f--half f--expiry"><dt>Expire le <i>Expiry</i> <code>exp</code></dt><dd data-f="expires">—</dd><dd class="f__note" data-f="left"></dd></div>
+              <div class="f"><dt>Courriel <i>Email</i> <code>email</code></dt><dd data-f="email">—</dd></div>
+            </dl>
+            <div class="mrz" aria-label="Bande de lecture automatique, calculée depuis le jeton">
+              <p data-f="mrz1"></p>
+              <p data-f="mrz2"></p>
+            </div>
+          </section>
+
+          <section class="page page--visa" aria-label="Page des visas">
+            <svg class="guilloche" aria-hidden="true"></svg>
+            <header class="page__head">
+              <p class="page__title">Visas <span>Visas</span></p>
+              <p class="page__realm"><span data-f="roleCount">6</span> rôles</p>
+            </header>
+            <svg class="stamps" id="stamps" viewBox="0 0 300 300" role="img" aria-label="Tampons"></svg>
+            <dl class="fields fields--visa">
+              <div class="f"><dt>Mentions <i>Endorsements</i> <code>scope</code></dt><dd data-f="scope">—</dd></div>
+              <div class="f f--half"><dt>Guichet <i>Issued to</i> <code>azp</code></dt><dd data-f="client">—</dd></div>
+              <div class="f f--half"><dt>Sceau <i>Seal</i> <code>alg</code></dt><dd data-f="seal">—</dd></div>
+              <div class="f"><dt>Séjour <i>Session</i> <code>sid</code></dt><dd class="mono" data-f="sid">—</dd></div>
+            </dl>
+            <p class="page__note">Le sceau (la signature) n'est pas vérifié par cette page : c'est le travail de l'API qui reçoit le jeton, avec les clés publiques du royaume (<code>/protocol/openid-connect/certs</code>).</p>
+          </section>
+        </article>
+
+        <div class="rawtoken">
+          <div class="rawtoken__bar">
+            <button type="button" class="cc-btn cc-btn--sm" id="token-toggle" aria-expanded="false" aria-controls="token-panel" disabled>Voir le jeton brut</button>
+            <button type="button" class="cc-btn cc-btn--sm cc-btn--ghost" id="token-copy" disabled>Copier le jeton complet</button>
+            <span class="rawtoken__hint" id="token-hint">Disponible après le contrôle</span>
+          </div>
+          <div class="rawtoken__panel" id="token-panel" hidden>
+            <p class="rawtoken__legend">
+              <span class="seg seg--h">En-tête</span>
+              <span class="seg seg--p">Contenu</span>
+              <span class="seg seg--s">Signature</span>
+              <span class="rawtoken__len" id="token-length"></span>
+            </p>
+            <p class="jwt" id="token-jwt"><span class="seg--h"></span>.<span class="seg--p"></span>.<span class="seg--s"></span></p>
+            <div class="rawtoken__json">
+              <pre id="token-header"></pre>
+              <pre id="token-payload"></pre>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
-      <div class="card-title">Status</div>
-      <div class="status-row">
-        <div class="status-dot loading" id="status-dot"></div>
-        <span class="status-text" id="status">Initialisation…</span>
+    <section class="lower">
+      <div class="ledger">
+        <h2 class="ledger__title">Registre du poste</h2>
+        <p class="ledger__sub">Ce que keycloak-js vient de faire, dans l'ordre.</p>
+        <ol class="ledger__list" id="log"></ol>
       </div>
-    </div>
 
-    <div class="card">
-      <div class="card-title">User</div>
-      <div class="user-grid">
-        <div class="uf"><div class="uf-label">Username</div><div class="uf-value uf-empty" id="uf-username">—</div></div>
-        <div class="uf"><div class="uf-label">Email</div><div class="uf-value uf-empty" id="uf-email">—</div></div>
-        <div class="uf"><div class="uf-label">Name</div><div class="uf-value uf-empty" id="uf-name">—</div></div>
-        <div class="uf"><div class="uf-label">Issuer</div><div class="uf-value uf-empty" id="uf-issuer">—</div></div>
+      <aside class="academy" aria-labelledby="academy-title">
+        <div class="academy__holo"><img src="cc-badge.svg" alt="Badge de la certification Clever Cloud" width="150" height="150"></div>
+        <div class="academy__body">
+          <p class="academy__kind">Visa Clever Cloud Academy</p>
+          <h2 class="academy__title" id="academy-title">Envie de maîtriser Clever Cloud ?</h2>
+          <p class="academy__text">Cette app tourne sur Clever Cloud. Vous aussi, certifiez-vous : validez vos compétences avec la certification officielle et devenez expert de la plateforme.</p>
+          <a class="cc-btn cc-btn--gradient" href="https://academy.clever.cloud/" target="_blank" rel="noopener noreferrer">Obtenir la certification</a>
+        </div>
+        <p class="academy__mrz" aria-hidden="true"><span>V&lt;CCAACADEMY&lt;&lt;CERTIFIEZ&lt;VOUS&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;</span></p>
+      </aside>
+    </section>
+
+    <section class="cc-platform platform" aria-labelledby="platform-title">
+      <div class="cc-platform__head">
+        <h3 id="platform-title">Running on Clever Cloud</h3>
+        <span class="cc-pill cc-pill--muted" id="pf-pill">Local</span>
       </div>
-    </div>
+      <dl class="cc-kv">
+        <div><dt>Hôte</dt><dd id="pf-host">—</dd></div>
+        <div><dt>Runtime</dt><dd id="pf-runtime">—</dd></div>
+        <div><dt>Variables</dt><dd id="pf-vars" class="is-empty">—</dd></div>
+        <div><dt>Keycloak</dt><dd id="pf-keycloak">—</dd></div>
+      </dl>
+      <p class="cc-platform__foot">Le navigateur parle directement à Keycloak : cette page ne reçoit ni mot de passe ni jeton côté serveur. <a href="https://www.clever.cloud/developers/doc/addons/keycloak/" target="_blank" rel="noopener noreferrer">L'add-on Keycloak</a>, <a href="https://www.clever.cloud/developers/doc/applications/static/" target="_blank" rel="noopener noreferrer">le runtime Static</a>.</p>
+    </section>
+  </main>
 
-    <div class="card">
-      <div class="card-title">Access Token</div>
-      <div class="token-wrap">
-        <pre class="muted" id="token">No token</pre>
-        <button class="copy-btn" onclick="copyToken()">Copy</button>
+  <footer class="cc-footer">
+    <div class="cc-container">
+      <div class="cc-footer__inner">
+        <div class="cc-footer__brand">
+          <a href="https://www.clever.cloud" target="_blank" rel="noopener noreferrer" aria-label="Clever Cloud">
+<svg class="cc-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 116" role="img" aria-label="Clever Cloud">
+  <g fill="none">
+        <g fill="currentColor" transform="translate(129 35)">
+      <path d="M15.241,18.87 C10.52,18.87 7.335,22.47 7.335,27.013 C7.335,31.556 10.58,35.215 15.183,35.215 C18.074,35.215 20.375,34.212 22.145,32.442 L25.804,37.753 C23.562,40.232 19.49,42.002 15.005,42.002 C6.627,42.002 0.136,35.275 0.136,27.073 C0.136,18.812 6.627,12.086 14.888,12.086 C19.726,12.086 23.562,13.738 26.039,16.335 L21.909,21.468 C20.139,19.755 18.015,18.87 15.241,18.87 Z"/>
+      <polygon points="31.229 .578 38.428 .578 38.428 41.174 31.229 41.174"/>
+      <path d="M44.976,27.072 C44.976,18.811 51.112,12.085 59.255,12.085 C67.339,12.085 73.475,18.339 73.475,26.482 C73.475,27.367 73.416,28.37 73.298,28.842 L52.351,28.842 C53.059,32.795 56.069,35.628 60.435,35.628 C63.267,35.628 65.687,34.389 67.339,32.678 L71.056,37.575 C68.932,40.053 64.919,42 60.14,42 C51.348,42 44.976,35.274 44.976,27.072 Z M52.469,24.299 L66.1,24.299 C65.274,20.286 62.737,18.221 59.373,18.221 C55.773,18.221 53.295,20.699 52.469,24.299 Z"/>
+      <polygon points="104.864 12.911 94.656 41.175 85.333 41.175 75.065 12.911 82.972 12.911 90.17 34.743 97.487 12.911"/>
+      <path d="M106.867 27.072C106.867 18.811 113.003 12.085 121.146 12.085 129.23 12.085 135.366 18.339 135.366 26.482 135.366 27.367 135.307 28.37 135.189 28.842L114.242 28.842C114.95 32.795 117.96 35.628 122.326 35.628 125.158 35.628 127.578 34.389 129.23 32.678L132.947 37.575C130.823 40.053 126.81 42 122.031 42 113.239 42 106.867 35.274 106.867 27.072zM114.36 24.299L127.991 24.299C127.165 20.286 124.628 18.221 121.264 18.221 117.665 18.221 115.187 20.699 114.36 24.299zM148.758 41.174L141.56 41.174 141.56 12.91 148.758 12.91 148.758 15.978C150.351 13.618 152.711 12.083 155.661 12.083 157.55 12.083 159.084 12.614 160.205 13.499L157.195 20.344C156.252 19.577 154.836 19.105 153.478 19.105 150.586 19.105 148.757 21.524 148.757 25.36L148.757 41.174 148.758 41.174zM191.415 18.87C186.694 18.87 183.508 22.47 183.508 27.013 183.508 31.556 186.753 35.215 191.356 35.215 194.248 35.215 196.548 34.212 198.319 32.442L201.977 37.753C199.735 40.232 195.664 42.002 191.179 42.002 182.8 42.002 176.31 35.275 176.31 27.073 176.31 18.812 182.8 12.086 191.061 12.086 195.9 12.086 199.735 13.738 202.213 16.335L198.082 21.468C196.312 19.755 194.188 18.87 191.415 18.87z"/>
+      <polygon points="207.402 .578 214.6 .578 214.6 41.174 207.402 41.174"/>
+      <path d="M221.148 27.072C221.148 18.811 227.639 12.085 235.84 12.085 244.042 12.085 250.592 18.812 250.592 27.072 250.592 35.274 244.042 42.001 235.84 42.001 227.64 42 221.148 35.274 221.148 27.072zM243.335 27.013C243.335 22.47 240.207 18.87 235.9 18.87 231.533 18.87 228.347 22.47 228.347 27.013 228.347 31.556 231.533 35.215 235.9 35.215 240.207 35.215 243.335 31.556 243.335 27.013zM263.924 28.193C263.924 32.323 266.343 35.097 269.943 35.097 273.542 35.097 275.962 32.324 275.962 28.193L275.962 12.911 283.16 12.911 283.16 28.724C283.16 36.631 277.909 41.882 269.943 41.882 261.977 41.882 256.725 36.631 256.725 28.724L256.725 12.911 263.924 12.911 263.924 28.193zM318.795.578L318.795 41.174 311.537 41.174 311.537 38.106C309.472 40.525 306.58 42.001 302.922 42.001 295.429 42.001 289.351 35.864 289.351 27.072 289.351 18.516 295.075 12.085 302.922 12.085 306.64 12.085 309.53 13.442 311.537 15.743L311.537.578 318.795.578zM311.537 27.013C311.537 22.47 308.409 18.87 304.102 18.87 299.735 18.87 296.549 22.47 296.549 27.013 296.549 31.556 299.735 35.215 304.102 35.215 308.409 35.215 311.537 31.556 311.537 27.013z"/>
+    </g>
+    <polygon fill="#AB2B4A" points="100.423 29.134 100.423 86.868 89.721 73.062 83.76 58.003 83.756 58.003 89.418 42.731"/><polygon fill="#E87A68" points=".429 29.134 .429 86.868 9.889 73.481 17.092 58.003 17.096 58.003 9.773 43.319"/><polygon fill="#D74D4E" points="83.756 58.003 52.241 60.003 17.092 58.003 31.76 29.134 50.426 .269 70.722 31.961"/><polygon fill="#BD3246" points="100.423 29.134 83.756 58.003 50.426 .269"/><polygon fill="#F19175" points="50.426 .269 17.092 58.003 .425 29.134"/><polygon fill="#CF3942" points="83.756 58.003 72.365 82.931 50.426 115.737 27.849 81.83 17.092 58.003"/><polygon fill="#E0625B" points="50.426 115.737 .425 86.868 17.092 58.003"/><polygon fill="#9A244F" points="50.422 115.737 100.423 86.868 83.756 58.003"/>
+  </g>
+</svg>
+          </a>
+          <p>Une page statique, l'add-on Keycloak et rien d'autre : la connexion OpenID Connect se fait entre votre navigateur et le royaume.</p>
+        </div>
+        <div>
+          <h4>Documentation</h4>
+          <ul>
+            <li><a href="https://www.clever.cloud/developers/doc/addons/keycloak/" target="_blank" rel="noopener noreferrer">Keycloak sur Clever Cloud</a></li>
+            <li><a href="https://www.clever.cloud/developers/doc/applications/static/" target="_blank" rel="noopener noreferrer">Runtime Static</a></li>
+            <li><a href="https://www.keycloak.org/securing-apps/javascript-adapter" target="_blank" rel="noopener noreferrer">Adaptateur keycloak-js</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Aller plus loin</h4>
+          <ul>
+            <li><a class="is-cert" href="https://academy.clever.cloud/" target="_blank" rel="noopener noreferrer">Certification Clever Cloud ↗</a></li>
+            <li><a href="https://www.clever-cloud.com" target="_blank" rel="noopener noreferrer">clever-cloud.com</a></li>
+            <li><a href="https://www.linkedin.com/company/clever-cloud/" target="_blank" rel="noopener noreferrer">LinkedIn</a></li>
+          </ul>
+        </div>
       </div>
+      <div class="cc-footer__bottom"><span>Démo open source, licence MIT</span><span>keycloak-js 26, sans framework ni build</span></div>
     </div>
-
-  </div>
-
-  <div class="cert-banner container">
-    <div class="cert-icon">🎓</div>
-    <div class="cert-content">
-      <div class="cert-title">Envie de maîtriser Clever Cloud ?</div>
-      <div class="cert-sub">Validez vos compétences avec la certification officielle — et devenez expert de la plateforme.</div>
-    </div>
-    <a class="cert-btn" href="https://academy.clever.cloud/" target="_blank" rel="noopener noreferrer">Obtenir la certification →</a>
-  </div>
-
-  <footer class="footer container">
-    <div class="footer-links">
-      <a class="footer-link cc" href="https://www.clever-cloud.com" target="_blank" rel="noopener noreferrer">
-        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-        clever-cloud.com
-      </a>
-      <a class="footer-link li" href="https://www.linkedin.com/company/clever-cloud/" target="_blank" rel="noopener noreferrer">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
-        LinkedIn
-      </a>
-      <a class="footer-link" href="https://developers.clever-cloud.com/doc/addons/keycloak/" target="_blank" rel="noopener noreferrer">
-        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-        Keycloak on CC
-      </a>
-      <a class="footer-link" href="https://www.keycloak.org/documentation" target="_blank" rel="noopener noreferrer">
-        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        Keycloak Docs
-      </a>
-      <a class="footer-link" href="https://developers.clever-cloud.com/doc/applications/static/" target="_blank" rel="noopener noreferrer">
-        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        Static on CC
-      </a>
-      <a class="footer-link cert" href="https://academy.clever.cloud/" target="_blank" rel="noopener noreferrer">
-        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-        Certification Clever Cloud
-      </a>
-    </div>
-    <p class="footer-copy">Open source demo &middot; Deployed on Clever Cloud</p>
   </footer>
-
-  <script>
-    console.log('INLINE SCRIPT LOADED');
-
-    function setStatus(text, type) {
-      document.getElementById('status').textContent = text;
-      document.getElementById('status-dot').className = 'status-dot ' + type;
-    }
-
-    function setUF(id, value) {
-      const el = document.getElementById(id);
-      if (value) { el.textContent = value; el.classList.remove('uf-empty'); }
-      else { el.textContent = '—'; el.classList.add('uf-empty'); }
-    }
-
-    function copyToken() {
-      const t = document.getElementById('token').textContent;
-      if (t && t !== 'No token') {
-        navigator.clipboard.writeText(t).then(() => {
-          const b = document.querySelector('.copy-btn');
-          b.textContent = 'Copied!';
-          setTimeout(() => b.textContent = 'Copy', 2000);
-        });
-      }
-    }
-
-    // Expose render hooks for app.js to use
-    window.__setAuthenticated = function(keycloak) {
-      setStatus('Authenticated', 'ok');
-      const p = keycloak.tokenParsed || {};
-      setUF('uf-username', p.preferred_username);
-      setUF('uf-email', p.email);
-      setUF('uf-name', p.name);
-      setUF('uf-issuer', p.iss);
-      const t = keycloak.token || '';
-      const el = document.getElementById('token');
-      el.textContent = t.length > 300 ? t.substring(0, 300) + '…' : (t || 'No token');
-      el.classList.remove('muted');
-    };
-
-    window.__setUnauthenticated = function() {
-      setStatus('Not authenticated', 'idle');
-      setUF('uf-username', null); setUF('uf-email', null);
-      setUF('uf-name', null); setUF('uf-issuer', null);
-      const el = document.getElementById('token');
-      el.textContent = 'No token'; el.classList.add('muted');
-    };
-
-    window.__setError = function(msg) {
-      setStatus(msg, 'error');
-    };
-  </script>
-  <script src="https://unpkg.com/keycloak-js@22.0.5/dist/keycloak.js"></script>
-  <script src="./app.js"></script>
 </body>
 </html>
